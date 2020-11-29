@@ -253,58 +253,69 @@ x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.33,random_st
 
 # print(y_predict.sum())
 
-
 #-----RANDOM FOREST-----
-
+print(df.head(1))
 #got recall of 74%
 from sklearn.preprocessing import StandardScaler
 sc = StandardScaler()
 x_train = sc.fit_transform(x_train)
 x_test = sc.transform(x_test)
+
+print(x_train[0])
 #
 # # Fitting Random Forest Classifier to the dataset
 from sklearn.ensemble import RandomForestClassifier
 classifier = RandomForestClassifier(n_estimators = 50, random_state = 0)
 classifier.fit(x_train, y_train)
 # Predicting result for training set and validation set
-predict_train_rf = classifier.predict(x_train)
-predict_val_rf = classifier.predict(x_test)
-
-from sklearn.metrics import confusion_matrix
-cm_train = confusion_matrix(y_train, predict_train_rf)
-cm_val = confusion_matrix(y_test, predict_val_rf)
-
-# Model Performance
+# predict_train_rf = classifier.predict(x_train)
+# predict_val_rf = classifier.predict(x_test)
+#
+# from sklearn.metrics import confusion_matrix
+# cm_train = confusion_matrix(y_train, predict_train_rf)
+# cm_val = confusion_matrix(y_test, predict_val_rf)
+#
+# # Model Performance
 from sklearn.metrics import accuracy_score, recall_score, precision_score
-print("Val Accuracy : ", accuracy_score(y_test, predict_val_rf) *  100)
-print("Val Recall : ", recall_score(y_test, predict_val_rf) *  100)
-print("Val Precision : ", precision_score(y_test, predict_val_rf) *  100)
-print(confusion_matrix(y_test, predict_val_rf))
-print(classification_report(y_test, predict_val_rf))
+# print("Val Accuracy : ", accuracy_score(y_test, predict_val_rf) *  100)
+# print("Val Recall : ", recall_score(y_test, predict_val_rf) *  100)
+# print("Val Precision : ", precision_score(y_test, predict_val_rf) *  100)
+# print(confusion_matrix(y_test, predict_val_rf))
+# print(classification_report(y_test, predict_val_rf))
 
 
 #-----Upsampling----
 from sklearn.utils import resample
-print('Number of class 1 samples before:', x_train[y_train==1].shape[0])
+from collections import Counter
 
-X_train_upsampled, y_train_upsampled = resample(x_train[y_train == 1],
-                                                y_train[y_train == 1],
-                                                replace=True,
-                                                n_samples=x_train[y_train == 0].shape[0],
-                                                random_state=123)
+print("Before Upsampling:-")
+print(Counter(y_train))
 
-print('Number of class 1 samples after:',X_train_upsampled.shape[0])
+# X_train_upsampled, y_train_upsampled = resample(x_train[y_train == 1],
+#                                                 y_train[y_train == 1],
+#                                                 replace=True,
+#                                                 n_samples=x_train[y_train == 0].shape[0],
+#                                                 random_state=123)
 
-X_train_bal = np.vstack((x_train[y_train==0], X_train_upsampled))
-y_train_bal = np.hstack((y_train[y_train==0], y_train_upsampled))
+
+# Let's use SMOTE to oversample
+from imblearn.over_sampling import SMOTE
+oversample = SMOTE()
+X_train_upsampled, y_train_upsampled = oversample.fit_resample(x_train,y_train)
+
+print("After Upsampling:-")
+print(Counter(y_train_upsampled))
+
+# X_train_bal = X_train_upsampled
+# y_train_bal = y_train_upsampled
 
 
 #-----Random Forest after upsampling------
 print("\n\n\n\n AFTER UPSAMPLING\n\n")
 classifier = RandomForestClassifier(n_estimators = 50, random_state = 0)
-classifier.fit(X_train_bal, y_train_bal)
+classifier.fit(X_train_upsampled, y_train_upsampled)
 # Predicting result for training set and validation set
-predict_train_rf = classifier.predict(X_train_bal)
+# predict_train_rf = classifier.predict(X_train_bal)
 predict_val_rf = classifier.predict(x_test)
 
 
@@ -318,4 +329,4 @@ print("Val Precision : ", precision_score(y_test, predict_val_rf) *  100)
 print(cm_val)
 print(classification_report(y_test, predict_val_rf))
 
-#this gave us recall of 83%
+#this gave us recall of 86%
